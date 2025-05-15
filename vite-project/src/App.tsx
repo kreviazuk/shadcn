@@ -1,22 +1,20 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import { LoginPage } from "@/pages/auth/login-page";
+// import { Routes, Route, Navigate } from "react-router-dom"; // No longer needed here
+// import { LoginPage } from "@/pages/auth/login-page"; // No longer needed here
+// import { DashboardLayout } from "@/components/layout/dashboard-layout"; // No longer needed here
+// import { OverviewPage } from "@/pages/dashboard/overview-page"; // No longer needed here
+import { AppRoutes } from "@/router"; // Import the centralized routes
 import "./App.css";
 
 /**
  * App 组件
  *
  * 职责:
- * - 作为应用的根组件。
- * - 使用 react-router-dom 设置应用的路由规则。
- * - 定义路径与页面组件的映射关系。
+ * - 作为应用的根组件外壳。
+ * - 渲染由 AppRoutes管理的路由。
  */
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      {/* 默认重定向到登录页 */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
+    <AppRoutes />
   );
 }
 
