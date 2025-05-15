@@ -1,12 +1,11 @@
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { LoginPage } from "@/pages/auth/login-page";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { OverviewPage } from "@/pages/dashboard/overview-page";
-import { EmployeePage } from "@/pages/dashboard/employee-page";
-import { ProductPage } from "@/pages/dashboard/product-page";
-import { AccountPage } from "@/pages/dashboard/account-page";
-import { ProfilePage } from "@/pages/dashboard/profile-page";
-import { KanbanPage } from "@/pages/dashboard/kanban-page";
+import { OverviewPage } from "@/pages/dashboard";
+import { EmployeePage } from "@/pages/employee/index";
+import { ProductPage } from "@/pages/product/index";
+import { ProfilePage } from "@/pages/account/profile/index";
+import { KanbanPage } from "@/pages/kanban/index";
 
 /**
  * AppRoutes 组件
@@ -25,7 +24,6 @@ export function AppRoutes() {
         <Route path="overview" element={<OverviewPage />} />
         <Route path="employees" element={<EmployeePage />} />
         <Route path="products" element={<ProductPage />} />
-        <Route path="account" element={<AccountPage />} />
         <Route path="account/profile" element={<ProfilePage />} />
         <Route path="kanban" element={<KanbanPage />} />
       </Route>
