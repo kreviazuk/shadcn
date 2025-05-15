@@ -23,14 +23,37 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+/**
+ * 定义登录表单的校验规则。
+ * - email: 必须是有效的邮箱格式。
+ * - password: 最小长度为6个字符。
+ */
 const formSchema = z.object({
   email: z.string().email({ message: "请输入有效的邮箱地址" }),
   password: z.string().min(6, { message: "密码长度至少为6位" }),
 });
 
+/**
+ * 从 Zod schema 推断出表单值的类型。
+ */
 type LoginFormValues = z.infer<typeof formSchema>;
 
+/**
+ * LoginForm 组件
+ *
+ * 职责:
+ * - 展示登录表单界面 (邮箱、密码输入框, 登录按钮)。
+ * - 使用 react-hook-form 处理表单状态和校验。
+ * - 使用 Zod 定义和执行表单校验规则。
+ * - 处理表单提交逻辑 (目前为模拟 API 调用)。
+ * - 管理加载状态 (isLoading) 以在提交期间禁用表单元素并显示加载提示。
+ */
 export function LoginForm() {
+  /**
+   * 初始化 react-hook-form。
+   * - resolver: 使用 Zod schema进行校验。
+   * - defaultValues: 设置表单字段的初始值。
+   */
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -39,17 +62,43 @@ export function LoginForm() {
     },
   });
 
+  // 使用 form.watch() 来获取所有字段的实时值
+  const watchedValues = form.watch();
+  // 或者只监听特定字段:
+  // const watchedEmail = form.watch("email");
+  // const watchedPassword = form.watch("password");
+
+  React.useEffect(() => {
+    // 当 watchedValues 发生变化时，将其打印到控制台
+    console.log("表单实时值:", watchedValues);
+
+    // 如果你只想监听特定字段的变化并打印：
+    // console.log("实时 Email:", watchedEmail);
+    // console.log("实时 Password:", watchedPassword);
+  }, [watchedValues]); // 依赖数组中放入 watchedValues，确保仅在它变化时执行 effect
+
+  // 如果你分别监听了 email 和 password，依赖数组应该是这样：
+  // }, [watchedEmail, watchedPassword]);
+
+  /**
+   * 管理表单提交时的加载状态。
+   * true 表示正在提交，false 表示空闲。
+   */
   const [isLoading, setIsLoading] = React.useState(false);
 
+  /**
+   * 表单提交处理函数。
+   * @param values - 经过 Zod 校验的表单数据。
+   */
   function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
     console.log("表单提交数据:", values);
-    // 在这里处理登录逻辑，例如调用 API
-    // 模拟 API 调用
+    // 在这里处理实际的登录逻辑，例如调用后端 API
+    // 此处为模拟 API 调用，1.5秒后重置表单并解除加载状态
     setTimeout(() => {
       setIsLoading(false);
       alert("登录成功 (模拟)!");
-      form.reset();
+      form.reset(); // 提交成功后重置表单
     }, 1500);
   }
 
@@ -62,26 +111,30 @@ export function LoginForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Shadcn UI Form 组件，集成了 react-hook-form */}
         <Form {...form}>
+          {/* HTML form 元素，onSubmit 事件由 react-hook-form 的 handleSubmit 处理 */}
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* 邮箱字段 */}
             <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
+              control={form.control} // react-hook-form 的 control 对象
+              name="email" // 字段名称，与 formSchema 中的 key 对应
+              render={({ field }) => ( // render prop，用于渲染字段的 UI
                 <FormItem>
                   <FormLabel>邮箱</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
                       placeholder="m@example.com"
-                      {...field}
-                      disabled={isLoading}
+                      {...field} // 将 react-hook-form 提供的 props 传递给 Input 组件
+                      disabled={isLoading} // 根据加载状态禁用输入框
                     />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage /> {/* 用于显示该字段的校验错误信息 */}
                 </FormItem>
               )}
             />
+            {/* 密码字段 */}
             <FormField
               control={form.control}
               name="password"
@@ -100,7 +153,8 @@ export function LoginForm() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            {/* 提交按钮 */}
+            <Button type="submit" className="w-full text-black-500" disabled={isLoading}>
               {isLoading ? "登录中..." : "登录"}
             </Button>
           </form>
