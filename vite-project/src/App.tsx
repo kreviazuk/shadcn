@@ -1,12 +1,15 @@
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Routes, Route, Navigate } from "react-router-dom";
+import { LoginPage } from "@/pages/auth/login-page";
+import "./App.css";
+
 function App() {
   return (
-    <div className="flex flex-col justify-center items-center min-h-svh">
-      <Button className="bg-blue-500 text-blue">Click me</Button>
-      <Input className="text-yellow-500 bg-gray-500" placeholder="Enter your name" />
-    </div>
-  )
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      {/* 默认重定向到登录页 */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
 }
 
-export default App
+export default App;
