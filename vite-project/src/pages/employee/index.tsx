@@ -1,56 +1,10 @@
 import * as React from 'react';
-import { useState, useMemo, useCallback, useEffect } from 'react';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { ArrowUpDown, Trash2, ChevronUp, ChevronDown, Edit2Icon, PlusCircleIcon } from 'lucide-react';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import * as z from "zod";
-
-interface Employee {
-  id: string;
-  name: string;
-  email: string;
-  department: string;
-  title: string;
-  status: 'active' | 'inactive';
-  avatar?: string;
-}
+import { useState, useMemo, useCallback } from 'react';
+import { EmployeeTableToolbar } from '@/pages/employee/components/employee-table-toolbar';
+import { EmployeeTable } from '@/pages/employee/components/employee-table';
+import { EmployeeFormDialog } from '@/pages/employee/components/employee-form-dialog';
+import { DeleteConfirmationDialog } from '@/pages/employee/components/delete-confirmation-dialog';
+import type { Employee, SortKey, ColumnDefinition, EmployeeFormValues, ModalMode } from './types';
 
 const initialMockEmployees: Employee[] = Array.from({ length: 15 }, (_, i) => ({
   id: (i + 1).toString(),
@@ -61,69 +15,18 @@ const initialMockEmployees: Employee[] = Array.from({ length: 15 }, (_, i) => ({
   status: i % 2 === 0 ? 'active' : 'inactive',
 }));
 
-type SortKey = keyof Employee;
-type ModalMode = 'add' | 'edit';
-
-interface ColumnDefinition {
-  key: keyof Employee | 'select' | 'actions';
-  label: string;
-  className?: string;
-  headClassName?: string;
-  cellClassName?: string;
-  sortable?: boolean;
-}
-
-// Zod schema for form validation
-const employeeSchema = z.object({
-  id: z.string().optional(),
-  name: z.string().min(2, { message: '姓名至少包含2个字符。' }),
-  email: z.string().email({ message: '请输入有效的邮箱地址。' }),
-  department: z.string().min(1, { message: '部门不能为空。' }),
-  title: z.string().min(1, { message: '职位不能为空。' }),
-  status: z.enum(['active', 'inactive']),
-});
-
-type EmployeeFormValues = z.infer<typeof employeeSchema>;
-
 export function EmployeePage() {
   const [employees, setEmployees] = useState<Employee[]>(initialMockEmployees);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending' }>({ key: 'id', direction: 'ascending' });
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<ModalMode>('add');
-  const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-
-  const form = useForm<EmployeeFormValues>({
-    resolver: zodResolver(employeeSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      department: "",
-      title: "",
-      status: "active",
-    },
-  });
-
-  useEffect(() => {
-    if (isModalOpen) {
-      if (modalMode === 'add') {
-        form.reset({ name: '', email: '', department: '', title: '', status: 'active' });
-        setEditingEmployeeId(null);
-      } else if (editingEmployeeId !== null) {
-        const employeeToEdit = employees.find(emp => emp.id === editingEmployeeId);
-        if (employeeToEdit) {
-          form.reset(employeeToEdit);
-        }
-      }
-    } else {
-      // Optionally clear form on close, or leave as is if re-opening for edit might be immediate
-      // form.reset({ name: '', email: '', department: '', title: '', status: 'active' }); 
-    }
-  }, [isModalOpen, modalMode, editingEmployeeId, form, employees]);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [employeeIdToDelete, setEmployeeIdToDelete] = useState<string | null>(null);
 
   const handleSort = useCallback((key: SortKey) => {
     setSortConfig(prevConfig => ({
@@ -175,60 +78,59 @@ export function EmployeePage() {
     });
   }, []);
 
-  const openModal = (mode: ModalMode, employee?: Employee) => {
+  const openFormModal = (mode: ModalMode, employee?: Employee) => {
     setModalMode(mode);
-    if (mode === 'add') {
-      setEditingEmployeeId(null);
-      form.reset({ name: '', email: '', department: '', title: '', status: 'active' });
-    } else if (employee) {
-      setEditingEmployeeId(employee.id);
-      form.reset(employee);
-    }
-    setIsModalOpen(true);
+    setEditingEmployee(employee || null);
+    setIsFormModalOpen(true);
   };
 
-  function onSubmit(data: EmployeeFormValues) {
+  function handleFormSubmit(data: EmployeeFormValues) {
     if (modalMode === 'add') {
       const newId = `emp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-      setEmployees(prev => [...prev, { ...data, id: newId }]);
-    } else if (editingEmployeeId !== null) {
+      const newEmployee: Employee = { 
+        ...data, 
+        id: newId, 
+        status: data.status || 'active' 
+      };
+      setEmployees(prev => [...prev, newEmployee]);
+    } else if (editingEmployee) {
       setEmployees(prev => 
         prev.map(emp => 
-          emp.id === editingEmployeeId ? { ...emp, ...data, id: editingEmployeeId } : emp
+          emp.id === editingEmployee.id ? { ...editingEmployee, ...data, id: editingEmployee.id } : emp
         )
       );
     }
-    setIsModalOpen(false);
+    setIsFormModalOpen(false);
+    setEditingEmployee(null);
   }
 
-  const handleDeleteRow = (id: string) => {
-    if (window.confirm('确定要删除这位员工吗？')) {
-       setEmployees(prev => prev.filter(emp => emp.id !== id));
-       setSelectedRows(prev => { const s = new Set(prev); s.delete(id); return s; });
-    }
+  const handleDeleteRowTrigger = (id: string) => {
+    setEmployeeIdToDelete(id);
+    setIsDeleteConfirmOpen(true);
   };
 
   const handleDeleteSelectedTrigger = () => {
     if (selectedRows.size > 0) {
-      setIsDeleteDialogOpen(true);
+      setEmployeeIdToDelete(null);
+      setIsDeleteConfirmOpen(true);
     }
   };
 
-  const confirmDeleteSelected = () => {
-    setEmployees(prev => prev.filter(emp => !selectedRows.has(emp.id)));
-    setSelectedRows(new Set());
-    setIsDeleteDialogOpen(false);
+  const confirmDelete = () => {
+    if (employeeIdToDelete) {
+       setEmployees(prev => prev.filter(emp => emp.id !== employeeIdToDelete));
+       setSelectedRows(prev => { const s = new Set(prev); s.delete(employeeIdToDelete); return s; });
+       setEmployeeIdToDelete(null);
+    } else {
+      setEmployees(prev => prev.filter(emp => !selectedRows.has(emp.id)));
+      setSelectedRows(new Set());
+    }
+    setIsDeleteConfirmOpen(false);
   };
   
   const numSelected = selectedRows.size;
   const numVisibleRows = sortedAndFilteredEmployees.length;
   const selectAllCheckedState: boolean | 'indeterminate' = numVisibleRows > 0 && numSelected === numVisibleRows ? true : (numSelected > 0 ? 'indeterminate' : false);
-
-  const SortIndicator = ({ columnKey }: { columnKey: SortKey | null }) => {
-    if (sortConfig.key !== columnKey || !sortConfig.key) return <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-40 group-hover:opacity-100" />;
-    return sortConfig.direction === 'ascending' ? <ChevronUp className="ml-1.5 h-4 w-4" /> : <ChevronDown className="ml-1.5 h-4 w-4" />;
-  };
-
   const columns: ColumnDefinition[] = [
     { key: 'select', label: '', className: "w-[50px] px-3" },
     { key: 'id', label: 'ID', sortable: true, className: "w-[70px] px-3" },
@@ -242,200 +144,42 @@ export function EmployeePage() {
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
-        <Input
-          placeholder="搜索员工..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-full sm:max-w-xs h-9"
-        />
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {numSelected > 0 && (
-            <Button variant="destructive" onClick={handleDeleteSelectedTrigger} size="sm" className="w-full sm:w-auto">
-              <Trash2 className="mr-1.5 h-4 w-4 " /> 删除选中 ({numSelected})
-            </Button>
-          )}
-          <Button onClick={() => openModal('add')} size="sm" className="w-full sm:w-auto">
-            <PlusCircleIcon className="mr-1.5 h-4 w-4" /> 新增员工
-          </Button>
-        </div>
-      </div>
+      <EmployeeTableToolbar
+        searchTerm={searchTerm}
+        onSearchTermChange={setSearchTerm}
+        onAddNewEmployee={() => openFormModal('add')}
+        onDeleteSelected={handleDeleteSelectedTrigger}
+        selectedRowCount={numSelected}
+      />
 
-      <div className="rounded-md border bg-card text-card-foreground shadow-sm">
-        <Table className="w-full">
-          <TableHeader>
-            <TableRow>
-              {columns.map(col => (
-                <TableHead 
-                  key={col.key}
-                  className={`py-3.5 ${col.className || ''} ${col.headClassName || ''} ${col.sortable ? 'cursor-pointer group hover:bg-muted/50' : ''}`}
-                  onClick={col.sortable ? () => handleSort(col.key as SortKey) : undefined}
-                >
-                  {col.key === 'select' ? (
-                    <Checkbox
-                      checked={selectAllCheckedState}
-                      onCheckedChange={handleSelectAllRows}
-                      aria-label="全选/取消全选"
-                      className="translate-y-[1px]"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center w-full">
-                      <div className="flex items-center">
-                        {col.label}
-                        {col.sortable && <SortIndicator columnKey={col.key as SortKey} />}
-                      </div>
-                    </div>
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedAndFilteredEmployees.length > 0 ? (
-              sortedAndFilteredEmployees.map((employee) => (
-                <TableRow key={employee.id} data-state={selectedRows.has(employee.id) ? "selected" : ""}>
-                  {columns.map(col => (
-                    <TableCell key={`${col.key}-${employee.id}`} className={`py-3 ${col.className || ''} ${col.cellClassName || ''}`}>
-                      {col.key === 'select' ? (
-                        <Checkbox
-                          checked={selectedRows.has(employee.id)}
-                          onCheckedChange={(checked: boolean) => handleSelectRow(employee.id, checked)}
-                          aria-label={`选择 ${employee.name}`}
-                          className="translate-y-[1px]"
-                        />
-                      ) : col.key === 'actions' ? (
-                        <div className="flex items-center justify-center gap-1.5 w-full">
-                          <Button variant="outline" size="sm" onClick={() => openModal('edit', employee)} className="h-8 w-8 p-0">
-                            <Edit2Icon className="h-4 w-4" />
-                            <span className="sr-only">编辑</span>
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDeleteRow(employee.id)} className="h-8 w-8 p-0 hover:border-destructive hover:text-destructive">
-                            <Trash2 className="h-4 w-4" />
-                            <span className="sr-only">删除</span>
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center w-full">
-                          {employee[col.key as keyof Employee]}
-                        </div>
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center py-3">
-                  {searchTerm ? `未找到与 "${searchTerm}" 相关的员工` : '暂无员工数据'}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <EmployeeTable
+        employees={sortedAndFilteredEmployees}
+        selectedRows={selectedRows}
+        sortConfig={sortConfig}
+        columns={columns}
+        selectAllCheckedState={selectAllCheckedState}
+        onSelectAllRows={handleSelectAllRows}
+        onSelectRow={handleSelectRow}
+        onSort={handleSort}
+        onEditEmployee={(employee) => openFormModal('edit', employee)}
+        onDeleteEmployee={handleDeleteRowTrigger}
+        searchTerm={searchTerm}
+      />
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <DialogHeader>
-                <DialogTitle>{modalMode === 'add' ? '新增员工' : '编辑员工'}</DialogTitle>
-                <DialogDescription>
-                  {modalMode === 'add' ? '填写以下信息以添加新员工。' : '修改员工信息。'}
-                </DialogDescription>
-              </DialogHeader>
-              
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-4 items-center gap-4">
-                    <FormLabel className="text-right">姓名</FormLabel>
-                    <FormControl className="col-span-3">
-                      <Input placeholder="请输入员工姓名" {...field} />
-                    </FormControl>
-                    <FormMessage className="col-span-4 text-right" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-4 items-center gap-4">
-                    <FormLabel className="text-right">邮箱</FormLabel>
-                    <FormControl className="col-span-3">
-                      <Input placeholder="请输入员工邮箱" {...field} />
-                    </FormControl>
-                    <FormMessage className="col-span-4 text-right" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="department"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-4 items-center gap-4">
-                    <FormLabel className="text-right">部门</FormLabel>
-                    <FormControl className="col-span-3">
-                      <Input placeholder="请输入员工部门" {...field} />
-                    </FormControl>
-                    <FormMessage className="col-span-4 text-right" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-4 items-center gap-4">
-                    <FormLabel className="text-right">职位</FormLabel>
-                    <FormControl className="col-span-3">
-                      <Input placeholder="请输入员工职位" {...field} />
-                    </FormControl>
-                    <FormMessage className="col-span-4 text-right" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem className="grid grid-cols-4 items-center gap-4">
-                    <FormLabel className="text-right">状态</FormLabel>
-                    <FormControl className="col-span-3">
-                      <Input placeholder="请输入员工状态" {...field} />
-                    </FormControl>
-                    <FormMessage className="col-span-4 text-right" />
-                  </FormItem>
-                )}
-              />
+      <EmployeeFormDialog
+        isOpen={isFormModalOpen}
+        onOpenChange={setIsFormModalOpen}
+        mode={modalMode}
+        onSubmit={handleFormSubmit}
+        employeeToEdit={editingEmployee}
+      />
 
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>取消</Button>
-                <Button type="submit">保存</Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确定要删除吗？</AlertDialogTitle>
-            <AlertDialogDescription>
-              {`您确定要删除选中的 ${selectedRows.size} 位员工吗？此操作无法撤销。`}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setIsDeleteDialogOpen(false)}>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteSelected} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        isOpen={isDeleteConfirmOpen}
+        onOpenChange={setIsDeleteConfirmOpen}
+        onConfirm={confirmDelete}
+        itemCount={employeeIdToDelete ? 1 : selectedRows.size}
+      />
     </div>
   );
 }
