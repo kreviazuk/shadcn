@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { LoginPage } from "@/pages/auth/login-page";
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { OverviewPage } from "@/pages/dashboard";
+import { DashboardPage } from "@/pages/dashboard";
 import { EmployeePage } from "@/pages/employee/index";
 import { ProductPage } from "@/pages/product/index";
 import { ProfilePage } from "@/pages/account/profile/index";
@@ -21,7 +21,7 @@ export function AppRoutes() {
       
       {/* Pathless Layout Route for Dashboard pages */}
       <Route element={<DashboardLayout><Outlet /></DashboardLayout>}>
-        <Route path="overview" element={<OverviewPage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="employees" element={<EmployeePage />} />
         <Route path="products" element={<ProductPage />} />
         <Route path="account/profile" element={<ProfilePage />} />

@@ -12,12 +12,12 @@ import {
 } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
-export function OverviewPage() {
+export function DashboardPage() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4">
       {/* Tab 栏 */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        <TabsList className="sticky top-0 z-10 bg-background py-2">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>

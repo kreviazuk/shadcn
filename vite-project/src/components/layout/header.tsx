@@ -23,8 +23,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { 
-  CalendarIcon, 
-  DownloadIcon, 
   LayoutDashboard, 
   PanelLeft, 
   Search, 
@@ -119,23 +117,6 @@ export function Header({ className }: { className?: string }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-
-      {/* 欢迎内容区域 */}
-      <div className="flex flex-col gap-4 px-4 md:flex-row md:items-center md:justify-between lg:px-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Hi, Welcome back 👋</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm">
-            <CalendarIcon className="h-4 w-4" />
-            <span>Jan 20, 2023 - Feb 09, 2023</span>
-          </div>
-          <Button variant="secondary" className="h-9">
-            <DownloadIcon className="mr-2 h-4 w-4" />
-            Download
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

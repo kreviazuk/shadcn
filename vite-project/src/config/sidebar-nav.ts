@@ -27,7 +27,7 @@ export type SidebarNavigationItem = ISidebarLink;
 export const sidebarNavigation: SidebarNavigationItem[] = [
   {
     type: "link",
-    href: "/overview", 
+    href: "/dashboard", 
     label: "Dashboard",
     icon: LayoutDashboard,
   },
