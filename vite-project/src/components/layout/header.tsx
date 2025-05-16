@@ -22,14 +22,43 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  LayoutDashboard, 
-  PanelLeft, 
-  Search, 
+import {
+  LayoutDashboard,
+  Moon,
+  PanelLeft,
+  Search,
   Sun
 } from "lucide-react";
+import { useState, useEffect } from "react";
 
 export function Header({ className }: { className?: string }) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    const storedTheme = localStorage.getItem("theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
+      setIsDarkMode(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    setIsDarkMode(prevMode => {
+      const newMode = !prevMode;
+      if (newMode) {
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("theme", "dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+        localStorage.setItem("theme", "light");
+      }
+      return newMode;
+    });
+  };
+
   return (
     <div className={cn("sticky top-0 z-30 bg-background space-y-4 pb-4 border-b", className)}>
       {/* 顶部导航栏 */}
@@ -91,8 +120,12 @@ export function Header({ className }: { className?: string }) {
         </div>
 
         {/* 主题切换按钮 */}
-        <Button variant="outline" size="icon" className="rounded-full">
-          <Sun className="h-[1.2rem] w-[1.2rem]" />
+        <Button variant="outline" size="icon" className="rounded-full" onClick={toggleTheme}>
+          {isDarkMode ? (
+            <Moon className="h-[1.2rem] w-[1.2rem]" />
+          ) : (
+            <Sun className="h-[1.2rem] w-[1.2rem]" />
+          )}
           <span className="sr-only">切换主题</span>
         </Button>
 
