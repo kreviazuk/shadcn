@@ -183,7 +183,7 @@ export function EmployeePage() {
     { key: 'name', label: '姓名', sortable: true, className: "min-w-[150px] px-3" },
     { key: 'role', label: '职位', sortable: true, className: "min-w-[150px] px-3" },
     { key: 'department', label: '部门', sortable: true, className: "min-w-[120px] px-3" },
-    { key: 'actions', label: '操作', className: "w-[100px] px-3 text-right" },
+    { key: 'actions', label: '操作', className: "w-[100px] px-3" },
   ];
 
   return (
@@ -225,9 +225,11 @@ export function EmployeePage() {
                       className="translate-y-[1px]"
                     />
                   ) : (
-                    <div className="flex items-center">
-                      {col.label}
-                      {col.sortable && <SortIndicator columnKey={col.key as SortKey} />}
+                    <div className="flex items-center justify-center w-full">
+                      <div className="flex items-center">
+                        {col.label}
+                        {col.sortable && <SortIndicator columnKey={col.key as SortKey} />}
+                      </div>
                     </div>
                   )}
                 </TableHead>
@@ -248,7 +250,7 @@ export function EmployeePage() {
                           className="translate-y-[1px]"
                         />
                       ) : col.key === 'actions' ? (
-                        <div className="flex items-center justify-end gap-1.5">
+                        <div className="flex items-center justify-center gap-1.5 w-full">
                           <Button variant="outline" size="sm" onClick={() => openModal('edit', employee)} className="h-8 w-8 p-0">
                             <Edit2Icon className="h-4 w-4" />
                             <span className="sr-only">编辑</span>
@@ -259,7 +261,9 @@ export function EmployeePage() {
                           </Button>
                         </div>
                       ) : (
-                        employee[col.key as keyof Employee]
+                        <div className="flex items-center justify-center w-full">
+                          {employee[col.key as keyof Employee]}
+                        </div>
                       )}
                     </TableCell>
                   ))}
