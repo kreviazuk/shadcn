@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   Table,
   TableHeader,
@@ -29,21 +29,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
 import { ArrowUpDown, Trash2, ChevronUp, ChevronDown, Edit2Icon, PlusCircleIcon } from 'lucide-react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 interface Employee {
-  id: number;
+  id: string;
   name: string;
-  role: string;
+  email: string;
   department: string;
+  title: string;
+  status: 'active' | 'inactive';
+  avatar?: string;
 }
 
 const initialMockEmployees: Employee[] = Array.from({ length: 15 }, (_, i) => ({
-  id: i + 1,
+  id: (i + 1).toString(),
   name: `员工 ${i + 1}`,
-  role: `职位 ${String.fromCharCode(65 + (i % 4))}-${Math.floor(i / 4) + 1}`,
+  email: `email${i + 1}@example.com`,
   department: `部门 ${String.fromCharCode(88 + (i % 3))}`,
+  title: `职位 ${String.fromCharCode(65 + (i % 4))}-${Math.floor(i / 4) + 1}`,
+  status: i % 2 === 0 ? 'active' : 'inactive',
 }));
 
 type SortKey = keyof Employee;
@@ -58,17 +73,57 @@ interface ColumnDefinition {
   sortable?: boolean;
 }
 
+// Zod schema for form validation
+const employeeSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(2, { message: '姓名至少包含2个字符。' }),
+  email: z.string().email({ message: '请输入有效的邮箱地址。' }),
+  department: z.string().min(1, { message: '部门不能为空。' }),
+  title: z.string().min(1, { message: '职位不能为空。' }),
+  status: z.enum(['active', 'inactive']),
+});
+
+type EmployeeFormValues = z.infer<typeof employeeSchema>;
+
 export function EmployeePage() {
   const [employees, setEmployees] = useState<Employee[]>(initialMockEmployees);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending' }>({ key: 'id', direction: 'ascending' });
-  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<ModalMode>('add');
-  const [currentEmployee, setCurrentEmployee] = useState<Partial<Employee>>({});
+  const [editingEmployeeId, setEditingEmployeeId] = useState<string | null>(null);
   
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
+  const form = useForm<EmployeeFormValues>({
+    resolver: zodResolver(employeeSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      department: "",
+      title: "",
+      status: "active",
+    },
+  });
+
+  useEffect(() => {
+    if (isModalOpen) {
+      if (modalMode === 'add') {
+        form.reset({ name: '', email: '', department: '', title: '', status: 'active' });
+        setEditingEmployeeId(null);
+      } else if (editingEmployeeId !== null) {
+        const employeeToEdit = employees.find(emp => emp.id === editingEmployeeId);
+        if (employeeToEdit) {
+          form.reset(employeeToEdit);
+        }
+      }
+    } else {
+      // Optionally clear form on close, or leave as is if re-opening for edit might be immediate
+      // form.reset({ name: '', email: '', department: '', title: '', status: 'active' }); 
+    }
+  }, [isModalOpen, modalMode, editingEmployeeId, form, employees]);
 
   const handleSort = useCallback((key: SortKey) => {
     setSortConfig(prevConfig => ({
@@ -112,7 +167,7 @@ export function EmployeePage() {
     }
   }, [sortedAndFilteredEmployees]);
 
-  const handleSelectRow = useCallback((id: number, checked: boolean) => {
+  const handleSelectRow = useCallback((id: string, checked: boolean) => {
     setSelectedRows(prevSelected => {
       const newSelected = new Set(prevSelected);
       if (checked) newSelected.add(id); else newSelected.delete(id);
@@ -123,33 +178,30 @@ export function EmployeePage() {
   const openModal = (mode: ModalMode, employee?: Employee) => {
     setModalMode(mode);
     if (mode === 'add') {
-      setCurrentEmployee({ name: '', role: '', department: '' });
+      setEditingEmployeeId(null);
+      form.reset({ name: '', email: '', department: '', title: '', status: 'active' });
     } else if (employee) {
-      setCurrentEmployee({ ...employee });
+      setEditingEmployeeId(employee.id);
+      form.reset(employee);
     }
     setIsModalOpen(true);
   };
 
-  const handleFormInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setCurrentEmployee(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleFormSubmit = () => {
-    if (!currentEmployee.name || !currentEmployee.role || !currentEmployee.department) {
-      alert('请填写所有必填字段！');
-      return;
-    }
+  function onSubmit(data: EmployeeFormValues) {
     if (modalMode === 'add') {
-      const newId = Math.max(0, ...employees.map(e => e.id).concat(0)) + 1;
-      setEmployees(prev => [...prev, { ...currentEmployee, id: newId } as Employee]);
-    } else if (currentEmployee.id) {
-      setEmployees(prev => prev.map(emp => emp.id === currentEmployee.id ? { ...emp, ...currentEmployee } as Employee : emp));
+      const newId = `emp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      setEmployees(prev => [...prev, { ...data, id: newId }]);
+    } else if (editingEmployeeId !== null) {
+      setEmployees(prev => 
+        prev.map(emp => 
+          emp.id === editingEmployeeId ? { ...emp, ...data, id: editingEmployeeId } : emp
+        )
+      );
     }
     setIsModalOpen(false);
-  };
+  }
 
-  const handleDeleteRow = (id: number) => {
+  const handleDeleteRow = (id: string) => {
     if (window.confirm('确定要删除这位员工吗？')) {
        setEmployees(prev => prev.filter(emp => emp.id !== id));
        setSelectedRows(prev => { const s = new Set(prev); s.delete(id); return s; });
@@ -181,8 +233,10 @@ export function EmployeePage() {
     { key: 'select', label: '', className: "w-[50px] px-3" },
     { key: 'id', label: 'ID', sortable: true, className: "w-[70px] px-3" },
     { key: 'name', label: '姓名', sortable: true, className: "min-w-[150px] px-3" },
-    { key: 'role', label: '职位', sortable: true, className: "min-w-[150px] px-3" },
+    { key: 'email', label: '邮箱', sortable: true, className: "min-w-[150px] px-3" },
     { key: 'department', label: '部门', sortable: true, className: "min-w-[120px] px-3" },
+    { key: 'title', label: '职位', sortable: true, className: "min-w-[150px] px-3" },
+    { key: 'status', label: '状态', sortable: true, className: "min-w-[100px] px-3" },
     { key: 'actions', label: '操作', className: "w-[100px] px-3" },
   ];
 
@@ -282,30 +336,87 @@ export function EmployeePage() {
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{modalMode === 'add' ? '新增员工' : '编辑员工'}</DialogTitle>
-            <DialogDescription>
-              {modalMode === 'add' ? '填写以下信息以添加新员工。' : '修改员工信息。'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">姓名</Label>
-              <Input id="name" name="name" value={currentEmployee.name || ''} onChange={handleFormInputChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">职位</Label>
-              <Input id="role" name="role" value={currentEmployee.role || ''} onChange={handleFormInputChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="department" className="text-right">部门</Label>
-              <Input id="department" name="department" value={currentEmployee.department || ''} onChange={handleFormInputChange} className="col-span-3" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsModalOpen(false)}>取消</Button>
-            <Button onClick={handleFormSubmit}>保存</Button>
-          </DialogFooter>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+              <DialogHeader>
+                <DialogTitle>{modalMode === 'add' ? '新增员工' : '编辑员工'}</DialogTitle>
+                <DialogDescription>
+                  {modalMode === 'add' ? '填写以下信息以添加新员工。' : '修改员工信息。'}
+                </DialogDescription>
+              </DialogHeader>
+              
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel className="text-right">姓名</FormLabel>
+                    <FormControl className="col-span-3">
+                      <Input placeholder="请输入员工姓名" {...field} />
+                    </FormControl>
+                    <FormMessage className="col-span-4 text-right" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel className="text-right">邮箱</FormLabel>
+                    <FormControl className="col-span-3">
+                      <Input placeholder="请输入员工邮箱" {...field} />
+                    </FormControl>
+                    <FormMessage className="col-span-4 text-right" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="department"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel className="text-right">部门</FormLabel>
+                    <FormControl className="col-span-3">
+                      <Input placeholder="请输入员工部门" {...field} />
+                    </FormControl>
+                    <FormMessage className="col-span-4 text-right" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel className="text-right">职位</FormLabel>
+                    <FormControl className="col-span-3">
+                      <Input placeholder="请输入员工职位" {...field} />
+                    </FormControl>
+                    <FormMessage className="col-span-4 text-right" />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem className="grid grid-cols-4 items-center gap-4">
+                    <FormLabel className="text-right">状态</FormLabel>
+                    <FormControl className="col-span-3">
+                      <Input placeholder="请输入员工状态" {...field} />
+                    </FormControl>
+                    <FormMessage className="col-span-4 text-right" />
+                  </FormItem>
+                )}
+              />
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>取消</Button>
+                <Button type="submit">保存</Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
 
