@@ -19,19 +19,31 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import type { Employee, EmployeeFormValues, ModalMode } from '../types'; // Adjusted path for types
-import { employeeSchema } from '../types'; // Adjusted path for schema
+import type { Employee, EmployeeFormValues, ModalMode } from '../types'; // 调整了类型的路径
+import { employeeSchema } from '../types'; // 调整了 schema 的路径
 
-// Removed local type definitions as they are now imported
-
+/**
+ * 员工表单对话框组件的属性接口。
+ */
 interface EmployeeFormDialogProps {
+  /** 控制对话框是否打开的状态。 */
   isOpen: boolean;
+  /** 当对话框打开或关闭状态改变时的回调函数。 */
   onOpenChange: (isOpen: boolean) => void;
+  /** 模态框的模式，可以是 'add' (新增) 或 'edit' (编辑)。 */
   mode: ModalMode;
+  /** 表单提交时的回调函数。 */
   onSubmit: (data: EmployeeFormValues) => void;
+  /** 需要编辑的员工信息 (可选，仅在编辑模式下使用)。 */
   employeeToEdit?: Employee | null;
 }
 
+/**
+ * 员工表单对话框组件。
+ * 用于新增或编辑员工信息。
+ * @param props - 组件属性。
+ * @returns 返回员工表单对话框的 React 元素。
+ */
 export function EmployeeFormDialog({
   isOpen,
   onOpenChange,
@@ -50,6 +62,7 @@ export function EmployeeFormDialog({
     },
   });
 
+  // 当对话框打开状态、模式或待编辑员工信息变化时，重置表单
   React.useEffect(() => {
     if (isOpen) {
       if (mode === 'add') {
@@ -60,6 +73,10 @@ export function EmployeeFormDialog({
     } 
   }, [isOpen, mode, employeeToEdit, form]);
 
+  /**
+   * 处理表单提交事件。
+   * @param data - 表单数据。
+   */
   const handleSubmit = (data: EmployeeFormValues) => {
     onSubmit(data);
   };

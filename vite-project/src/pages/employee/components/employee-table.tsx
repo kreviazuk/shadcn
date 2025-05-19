@@ -10,29 +10,54 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowUpDown, ChevronUp, ChevronDown, Edit2Icon, Trash2 } from 'lucide-react';
-import type { Employee, SortKey, ColumnDefinition } from '../types'; // Adjusted path for types
+import type { Employee, SortKey, ColumnDefinition } from '../types'; // 调整了类型的路径
 
-// Removed local type definitions as they are now imported
-
+/**
+ * 员工表格组件的属性接口。
+ */
 interface EmployeeTableProps {
+  /** 要在表格中显示的员工数据数组。 */
   employees: Employee[];
+  /** 包含选中行 ID 的集合。 */
   selectedRows: Set<string>;
+  /** 当前的排序配置。 */
   sortConfig: { key: SortKey | null; direction: 'ascending' | 'descending' };
+  /** 表格的列定义数组。 */
   columns: ColumnDefinition[];
+  /** 全选复选框的选中状态 (true, false, 或 'indeterminate')。 */
   selectAllCheckedState: boolean | 'indeterminate';
+  /** 当全选复选框状态改变时的回调函数。 */
   onSelectAllRows: (checked: boolean) => void;
+  /** 当行选择复选框状态改变时的回调函数。 */
   onSelectRow: (id: string, checked: boolean) => void;
+  /** 当列头被点击以进行排序时的回调函数。 */
   onSort: (key: SortKey) => void;
+  /** 点击编辑员工按钮时的回调函数。 */
   onEditEmployee: (employee: Employee) => void;
+  /** 点击删除员工按钮时的回调函数。 */
   onDeleteEmployee: (id: string) => void;
+  /** 当前的搜索关键词。 */
   searchTerm: string;
 }
 
+/**
+ * 排序指示器组件。
+ * 根据当前的排序状态显示不同的图标。
+ * @param columnKey - 当前列的键。
+ * @param sortConfig - 当前的排序配置。
+ * @returns 返回排序指示器图标的 React 元素。
+ */
 const SortIndicator = ({ columnKey, sortConfig }: { columnKey: SortKey | null, sortConfig: EmployeeTableProps['sortConfig'] }) => {
   if (sortConfig.key !== columnKey || !sortConfig.key) return <ArrowUpDown className="ml-1.5 h-3.5 w-3.5 opacity-40 group-hover:opacity-100" />;
   return sortConfig.direction === 'ascending' ? <ChevronUp className="ml-1.5 h-4 w-4" /> : <ChevronDown className="ml-1.5 h-4 w-4" />;
 };
 
+/**
+ * 员工表格组件。
+ * 用于显示、排序、选择和操作员工数据。
+ * @param props - 组件属性。
+ * @returns 返回员工表格的 React 元素。
+ */
 export function EmployeeTable({
   employees,
   selectedRows,
