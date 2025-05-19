@@ -1,0 +1,33 @@
+{
+  "common": {
+    "toggleTheme": "切换主题",
+    "myAccount": "我的账户",
+    "settings": "设置",
+    "support": "支持",
+    "logout": "登出",
+    "toggleLanguage": "切换语言",
+    "selectLanguage": "选择语言",
+    "toggleMenu": "切换菜单"
+  },
+  "sidebar": {
+    "Dashboard": "概览",
+    "Employee": "员工",
+    "Product": "产品",
+    "Account": "账户",
+    "Profile": "个人资料",
+    "Kanban": "看板",
+    "acmeInc": "Acme 公司",
+    "enterprisePlan": "企业版",
+    "user": {
+      "initials": "KV",
+      "name": "kreviazuk",
+      "email": "kreviazuzhou@gmail.com"
+    }
+  },
+  "header": {
+    "searchPlaceholder": "搜索..."
+  },
+  "pageSpecific": {
+    "overview": "概览"
+  }
+} 

@@ -21,18 +21,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard,
   Moon,
   PanelLeft,
   Search,
-  Sun
+  Sun,
+  Languages,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useTranslation } from 'react-i18next';
 
 export function Header({ className }: { className?: string }) {
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const { t, i18n } = useTranslation();
 
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
@@ -59,6 +64,10 @@ export function Header({ className }: { className?: string }) {
     });
   };
 
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng);
+  };
+
   return (
     <div className={cn("sticky top-0 z-30 bg-background space-y-4 pb-4 border-b", className)}>
       {/* 顶部导航栏 */}
@@ -68,7 +77,7 @@ export function Header({ className }: { className?: string }) {
           <SheetTrigger asChild>
             <Button size="icon" variant="outline" className="sm:hidden">
               <PanelLeft className="h-5 w-5" />
-              <span className="sr-only">切换菜单</span>
+              <span className="sr-only">{t('common.toggleMenu')}</span>
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="sm:max-w-xs">
@@ -78,13 +87,13 @@ export function Header({ className }: { className?: string }) {
                 className="group flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-full bg-primary text-lg font-semibold text-primary-foreground md:text-base"
               >
                 <LayoutDashboard className="h-5 w-5 transition-all group-hover:scale-110" />
-                <span className="sr-only">管理后台</span>
+                <span className="sr-only">{t('sidebar.dashboard')}</span>
               </a>
               <a
-                href="/dashboard"
+                href="#"
                 className="flex items-center gap-4 px-2.5 text-muted-foreground hover:text-foreground"
               >
-                概览
+                {t('sidebar.dashboard')}
               </a>
             </nav>
           </SheetContent>
@@ -95,13 +104,11 @@ export function Header({ className }: { className?: string }) {
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
-                <BreadcrumbLink href="/dashboard">
-                  Dashboard
-                </BreadcrumbLink>
+                <BreadcrumbLink href="/dashboard">{t('sidebar.dashboard')}</BreadcrumbLink>
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage>Overview</BreadcrumbPage>
+                <BreadcrumbPage>{t('pageSpecific.overview')}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -113,11 +120,29 @@ export function Header({ className }: { className?: string }) {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search..."
+              placeholder={t('header.searchPlaceholder')}
               className="w-full rounded-lg bg-background pl-8 md:w-[240px] lg:w-[280px]"
             />
           </div>
         </div>
+
+        {/* 语言切换按钮 */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="rounded-full">
+              <Languages className="h-[1.2rem] w-[1.2rem]" />
+              <span className="sr-only">{t('common.toggleLanguage')}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{t('common.selectLanguage')}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuRadioGroup value={i18n.resolvedLanguage} onValueChange={changeLanguage}>
+              <DropdownMenuRadioItem value="en">English</DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="zh">中文</DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {/* 主题切换按钮 */}
         <Button variant="outline" size="icon" className="rounded-full" onClick={toggleTheme}>
@@ -126,7 +151,7 @@ export function Header({ className }: { className?: string }) {
           ) : (
             <Sun className="h-[1.2rem] w-[1.2rem]" />
           )}
-          <span className="sr-only">切换主题</span>
+          <span className="sr-only">{t('common.toggleTheme')}</span>
         </Button>
 
         {/* 用户头像/菜单 */}
@@ -141,12 +166,12 @@ export function Header({ className }: { className?: string }) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>我的账户</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('common.myAccount')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>设置</DropdownMenuItem>
-            <DropdownMenuItem>支持</DropdownMenuItem>
+            <DropdownMenuItem>{t('common.settings')}</DropdownMenuItem>
+            <DropdownMenuItem>{t('common.support')}</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>登出</DropdownMenuItem>
+            <DropdownMenuItem>{t('common.logout')}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </header>

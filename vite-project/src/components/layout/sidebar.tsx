@@ -4,6 +4,7 @@ import { sidebarNavigation } from "@/config/sidebar-nav";
 import type { ISidebarLink, ISidebarSubLink } from "@/config/sidebar-nav"; // Re-enable ISidebarSubLink
 import { Link, useLocation } from "react-router-dom"; // IMPORT Link and useLocation
 import { useState } from "react"; // IMPORT useState
+import { useTranslation } from 'react-i18next'; // 导入 useTranslation
 
 // REMOVED NavItem interface and mainNavItems constant
 // interface NavItem { ... }
@@ -11,6 +12,7 @@ import { useState } from "react"; // IMPORT useState
 
 export function Sidebar({ className }: { className?: string }) {
   const location = useLocation();
+  const { t } = useTranslation(); // 使用 t 函数
   const [openSubmenus, setOpenSubmenus] = useState<Record<string, boolean>>({});
 
   const toggleSubmenu = (label: string) => {
@@ -37,9 +39,9 @@ export function Sidebar({ className }: { className?: string }) {
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <span className="font-medium text-sm">A</span>
             </div>
-            <span className="">Acme Inc</span>
+            <span className="">{t('sidebar.acmeInc')}</span>
           </Link>
-          <p className="ml-2 text-xs text-muted-foreground">Enterprise</p>
+          <p className="ml-2 text-xs text-muted-foreground">{t('sidebar.enterprisePlan')}</p>
         </div>
 
         <div className="flex-1 overflow-auto py-2">
@@ -47,14 +49,15 @@ export function Sidebar({ className }: { className?: string }) {
             {sidebarNavigation.map((item, index) => {
               const linkItem = item as ISidebarLink;
               const parentItemIsActive = isActive(linkItem.href, linkItem.subLinks, true);
-              const isSubmenuCurrentlyOpen = openSubmenus[linkItem.label] || false;
+              const translatedLabel = t(`sidebar.${linkItem.label}`, linkItem.label);
+              const isSubmenuCurrentlyOpen = openSubmenus[translatedLabel] || false;
 
               if (linkItem.subLinks && linkItem.subLinks.length > 0) {
                 return (
-                  <div key={`parent-group-${index}-${linkItem.label}`}>
+                  <div key={`parent-group-${index}-${translatedLabel}`}>
                     <div
-                      onClick={() => toggleSubmenu(linkItem.label)}
-                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSubmenu(linkItem.label); } }}
+                      onClick={() => toggleSubmenu(translatedLabel)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSubmenu(translatedLabel); } }}
                       className={cn(
                         "flex w-full items-center gap-2 rounded-lg px-2 py-2 text-foreground transition-all hover:bg-accent hover:text-accent-foreground text-left cursor-pointer",
                         parentItemIsActive && "bg-accent text-accent-foreground"
@@ -64,7 +67,7 @@ export function Sidebar({ className }: { className?: string }) {
                       tabIndex={0}
                     >
                       <linkItem.icon className="h-4 w-4 text-muted-foreground group-hover:text-accent-foreground" />
-                      {linkItem.label}
+                      {translatedLabel}
                       {isSubmenuCurrentlyOpen ? <ChevronDown className="ml-auto h-4 w-4 shrink-0" /> : <ChevronRight className="ml-auto h-4 w-4 shrink-0" />}
                     </div>
                     {isSubmenuCurrentlyOpen && (
@@ -81,7 +84,7 @@ export function Sidebar({ className }: { className?: string }) {
                               subLink.disabled && "pointer-events-none opacity-50"
                             )}
                           >
-                            {subLink.label}
+                            {t(`sidebar.${subLink.label}`, subLink.label)}
                           </Link>
                         );
                         })}
@@ -102,7 +105,7 @@ export function Sidebar({ className }: { className?: string }) {
                     )}
                   >
                     <linkItem.icon className="h-4 w-4 text-muted-foreground group-hover:text-accent-foreground" />
-                    {linkItem.label}
+                    {t(`sidebar.${linkItem.label}`, linkItem.label)}
                   </Link>
                 );
               }
@@ -113,11 +116,11 @@ export function Sidebar({ className }: { className?: string }) {
         <div className="mt-auto p-4 border-t border-border">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-foreground">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <span className="text-sm">KV</span>
+              <span className="text-sm">{t('sidebar.user.initials')}</span>
             </div>
             <div>
-              <p className="text-sm font-medium leading-none">kreviazuk</p>
-              <p className="text-xs text-muted-foreground">kreviazuzhou@gmail.com</p>
+              <p className="text-sm font-medium leading-none">{t('sidebar.user.name')}</p>
+              <p className="text-xs text-muted-foreground">{t('sidebar.user.email')}</p>
             </div>
             <ChevronDown className="ml-auto h-4 w-4 text-muted-foreground" />
           </div>

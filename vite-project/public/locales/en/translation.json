@@ -1,0 +1,33 @@
+{
+  "common": {
+    "toggleTheme": "Toggle theme",
+    "myAccount": "My Account",
+    "settings": "Settings",
+    "support": "Support",
+    "logout": "Logout",
+    "toggleLanguage": "Toggle language",
+    "selectLanguage": "Select Language",
+    "toggleMenu": "Toggle menu"
+  },
+  "sidebar": {
+    "Dashboard": "Dashboard",
+    "Employee": "Employees",
+    "Product": "Products",
+    "Account": "Account",
+    "Profile": "Profile",
+    "Kanban": "Kanban",
+    "acmeInc": "Acme Inc",
+    "enterprisePlan": "Enterprise",
+    "user": {
+      "initials": "KV",
+      "name": "kreviazuk",
+      "email": "kreviazuzhou@gmail.com"
+    }
+  },
+  "header": {
+    "searchPlaceholder": "Search..."
+  },
+  "pageSpecific": {
+    "overview": "Overview"
+  }
+} 
