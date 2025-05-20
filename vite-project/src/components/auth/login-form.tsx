@@ -3,6 +3,8 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Toaster,toast } from "sonner";
+
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -105,7 +107,7 @@ export function LoginForm() {
         throw new Error(errorData.message || "登录失败，请重试");
       }
       // 假设登录成功
-      alert("登录成功！");
+      toast.success("登录成功！");
       form.reset();
     } catch (error: unknown) {
       let message = "登录失败，请检查网络";
@@ -176,6 +178,7 @@ export function LoginForm() {
           </form>
         </Form>
       </CardContent>
+      <Toaster position="top-center" />
     </Card>
   );
 } 
