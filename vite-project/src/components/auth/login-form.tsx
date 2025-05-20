@@ -170,7 +170,7 @@ export function LoginForm() {
               )}
             />
             {/* 提交按钮 */}
-            <Button type="submit" className="w-full text-black-500" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "登录中..." : "登录"}
             </Button>
           </form>

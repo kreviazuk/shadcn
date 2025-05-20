@@ -1,20 +1,23 @@
+import { useState } from "react";
 import { LoginForm } from "@/components/auth/login-form";
+import { RegisterForm } from "@/components/auth/register-form";
 
 /**
  * LoginPage 组件
- *
- * 职责:
- * - 作为登录页面的容器，负责整体布局。
- * - 引入并展示 `LoginForm` 组件。
- * - 设置页面的背景和居中对齐方式。
+ * - 支持登录/注册表单切换
  */
 export function LoginPage() {
+  const [showRegister, setShowRegister] = useState(false);
+
   return (
-    // 使用 Flexbox 实现垂直和水平居中
-    // min-h-screen 确保容器至少占据整个屏幕的高度
-    // bg-gradient-to-br 设置了一个从 slate-900 到 slate-700 的渐变背景
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      <LoginForm />
+      {showRegister ? <RegisterForm /> : <LoginForm />}
+      <button
+        className="mt-4 text-blue-500 hover:underline"
+        onClick={() => setShowRegister((v) => !v)}
+      >
+        {showRegister ? "已有账号？去登录" : "没有账号？去注册"}
+      </button>
     </div>
   );
-} 
+}

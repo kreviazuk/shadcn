@@ -3,6 +3,7 @@ import Router from '@koa/router';
 import bodyParser from 'koa-bodyparser';
 import { PrismaClient } from '../generated/prisma';
 import { loginRouter } from './modules/auth/login.route';
+import cors from 'koa2-cors';
 
 const app = new Koa();
 const router = new Router();
@@ -63,7 +64,10 @@ router.delete('/products/:id', async (ctx) => {
     ctx.body = { error: '未找到商品' };
   }
 });
-
+app.use(cors({
+  origin: 'http://localhost:5173', // 只允许前端本地开发端口访问
+  credentials: true, // 如果需要支持 cookie
+}));
 app.use(bodyParser());
 app.use(router.routes());
 app.use(router.allowedMethods());
