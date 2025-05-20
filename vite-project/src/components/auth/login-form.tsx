@@ -24,6 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { apiFetch } from "@/lib/request";
 
 /**
  * 定义登录表单的校验规则。
@@ -95,20 +96,25 @@ export function LoginForm() {
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
-      });
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "登录失败，请重试");
+      // 使用 apiFetch 发送请求
+      const data = await apiFetch<{ token?: string; message?: string }>(
+        "/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(values),
+        }
+      );
+      const token = data?.token;
+      if (token) {
+        localStorage.setItem("token", token); // 保存 token
+        toast.success("登录成功！");
+        form.reset();
+      } else {
+        throw new Error(data?.message || "未获取到 token");
       }
-      // 假设登录成功
-      toast.success("登录成功！");
-      form.reset();
     } catch (error: unknown) {
       let message = "登录失败，请检查网络";
       if (error instanceof Error) {

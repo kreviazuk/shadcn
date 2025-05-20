@@ -1,12 +1,17 @@
 import Router from '@koa/router';
 import { PrismaClient } from '../../../generated/prisma';
 import nodemailer from 'nodemailer';
+import jwt from 'jsonwebtoken';
+import dotenv from 'dotenv';
+dotenv.config();
 
 export const loginRouter = new Router();
 const prisma = new PrismaClient();
 
 // 存储验证码（生产建议用 Redis 或数据库）
 const codeStore = new Map<string, string>();
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // 注册接口
 loginRouter.post('/register', async (ctx) => {
@@ -42,7 +47,18 @@ loginRouter.post('/login', async (ctx) => {
     ctx.body = { error: '邮箱或密码错误' };
     return;
   }
-  ctx.body = { message: '登录成功', token: 'mock-token' };
+  if (!JWT_SECRET) {
+    ctx.status = 500;
+    ctx.body = { error: 'JWT_SECRET 未配置' };
+    return;
+  }
+  // 生成 JWT token
+  const token = jwt.sign(
+    { userId: user.id, email: user.email },
+    JWT_SECRET,
+    { expiresIn: '7d' } // token 有效期7天
+  );
+  ctx.body = { message: '登录成功', token };
 });
 
 loginRouter.post('/send-code', async (ctx) => {
