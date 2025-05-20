@@ -90,16 +90,32 @@ export function LoginForm() {
    * 表单提交处理函数。
    * @param values - 经过 Zod 校验的表单数据。
    */
-  function onSubmit(values: LoginFormValues) {
+  async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
-    console.log("表单提交数据:", values);
-    // 在这里处理实际的登录逻辑，例如调用后端 API
-    // 此处为模拟 API 调用，1.5秒后重置表单并解除加载状态
-    setTimeout(() => {
+    try {
+      const response = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "登录失败，请重试");
+      }
+      // 假设登录成功
+      alert("登录成功！");
+      form.reset();
+    } catch (error: unknown) {
+      let message = "登录失败，请检查网络";
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      alert(message);
+    } finally {
       setIsLoading(false);
-      alert("登录成功 (模拟)!");
-      form.reset(); // 提交成功后重置表单
-    }, 1500);
+    }
   }
 
   return (
