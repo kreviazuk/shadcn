@@ -144,7 +144,6 @@ export function EmployeePage() {
    * @param data - 表单数据。
    */
   async function handleFormSubmit(data: EmployeeFormValues) {
-    setIsLoading(true); // 可以为表单提交也设置加载状态
     // setFetchError(null); // 由 toast 处理
     try {
       if (modalMode === 'add') {
