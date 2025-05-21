@@ -1,22 +1,51 @@
 import { toast } from "sonner";
 
+function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
+  if (!headers) return {};
+  if (headers instanceof Headers) {
+    const result: Record<string, string> = {};
+    headers.forEach((value, key) => {
+      result[key] = value;
+    });
+    return result;
+  }
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+  return headers as Record<string, string>;
+}
+
 export async function apiFetch<T = unknown>(
   url: string,
-  options?: RequestInit
-): Promise<T | undefined> {
-  try {
-    const res = await fetch(`/api${url}`, options);
-    const data = await res.json().catch(() => ({}));
-    if (res.status === 200) {
-      return data;
-    } else {
-      toast.error(data.error || data.message || "请求失败");
-      return undefined;
+  options: RequestInit & { body?: any } = {}
+): Promise<T> {
+  const { method = "GET", body, headers, ...rest } = options;
+
+  // 统一 headers 类型
+  const finalHeaders = normalizeHeaders(headers);
+
+  let finalBody = body;
+  if (["POST", "PUT", "PATCH"].includes(method.toUpperCase())) {
+    finalHeaders["Content-Type"] = "application/json";
+    if (body && typeof body !== "string") {
+      finalBody = JSON.stringify(body);
     }
-  } catch (e) {
-    toast.error((e as Error).message || "网络错误");
-    return undefined;
   }
+
+  const response = await fetch(url, {
+    method,
+    headers: finalHeaders,
+    body: finalBody,
+    ...rest,
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (response.status !== 200) {
+    toast.error(data.message || "请求失败");
+    throw new Error(data.message || "请求失败");
+  }
+  return data;
 }
 
 // GET 辅助方法

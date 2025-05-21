@@ -4,6 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Toaster,toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 import * as z from "zod";
 
@@ -24,7 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { apiFetch } from "@/lib/request";
+import { loginApi } from "@/api/api";
 
 /**
  * 定义登录表单的校验规则。
@@ -89,6 +90,8 @@ export function LoginForm() {
    */
   const [isLoading, setIsLoading] = React.useState(false);
 
+  const navigate = useNavigate();
+
   /**
    * 表单提交处理函数。
    * @param values - 经过 Zod 校验的表单数据。
@@ -96,31 +99,17 @@ export function LoginForm() {
   async function onSubmit(values: LoginFormValues) {
     setIsLoading(true);
     try {
-      // 使用 apiFetch 发送请求
-      const data = await apiFetch<{ token?: string; message?: string }>(
-        "/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(values),
-        }
-      );
+      const data = await loginApi(values);
+      console.log(data);
       const token = data?.token;
       if (token) {
         localStorage.setItem("token", token); // 保存 token
+        navigate("/dashboard");
         toast.success("登录成功！");
         form.reset();
       } else {
         throw new Error(data?.message || "未获取到 token");
       }
-    } catch (error: unknown) {
-      let message = "登录失败，请检查网络";
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      alert(message);
     } finally {
       setIsLoading(false);
     }
