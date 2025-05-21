@@ -156,11 +156,6 @@ export function EmployeePage() {
       fetchEmployees(); // 重新获取数据
     } catch (error) {
       console.error('表单提交失败:', error);
-      // setFetchError(error instanceof Error ? error.message : '表单提交失败'); // 由 toast 处理
-      // 保留模态框打开状态，以便用户看到错误并重试
-    } finally {
-      // 如果在提交过程中有特定加载状态，在这里取消
-      // setIsLoading(false); // 如果共用全局isLoading，则fetchEmployees会处理
     }
   }
 
@@ -225,7 +220,6 @@ export function EmployeePage() {
   // 表格列定义
   const columns: ColumnDefinition[] = [
     { key: 'select', label: '', className: "w-[50px] px-3" },
-    { key: 'id', label: 'ID', sortable: true, className: "w-[70px] px-3" },
     { key: 'name', label: '姓名', sortable: true, className: "min-w-[150px] px-3" },
     { key: 'email', label: '邮箱', sortable: true, className: "min-w-[150px] px-3" },
     { key: 'department', label: '部门', sortable: true, className: "min-w-[120px] px-3" },
@@ -239,12 +233,6 @@ export function EmployeePage() {
 
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
-      {/* {fetchError && ( // 移除此处的错误显示，依赖全局 toast
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <strong className="font-bold">错误!</strong>
-          <span className="block sm:inline"> {fetchError}</span>
-        </div>
-      )} */}
       <EmployeeTableToolbar
         searchTerm={searchTerm}
         onSearchTermChange={setSearchTerm} // setSearchTerm 会触发 useEffect -> fetchEmployees
@@ -301,27 +289,6 @@ export function EmployeePage() {
         onConfirm={confirmDelete}
         itemCount={employeeIdToDelete ? 1 : selectedRows.size}
       />
-      
-      {/* 简单的分页示例，可以集成到 Table 或 Toolbar */}
-      {/* {!isLoading && totalPages > 1 && (
-        <div className="flex justify-center items-center space-x-2 mt-4">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-          >
-            上一页
-          </button>
-          <span>第 {currentPage} 页 / 共 {totalPages} 页 ({totalItems} 条)</span>
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-          >
-            下一页
-          </button>
-        </div>
-      )} */}
     </div>
   );
 }
