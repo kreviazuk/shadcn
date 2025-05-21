@@ -3,10 +3,12 @@ import { PrismaClient } from '../../../generated/prisma';
 import nodemailer from 'nodemailer';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import Redis from 'ioredis';
 dotenv.config();
 
 export const loginRouter = new Router();
 const prisma = new PrismaClient();
+const redis = new Redis(); // 默认本地6379
 
 // 存储验证码（生产建议用 Redis 或数据库）
 const codeStore = new Map<string, string>();
@@ -58,7 +60,9 @@ loginRouter.post('/login', async (ctx) => {
     JWT_SECRET,
     { expiresIn: '7d' } // token 有效期7天
   );
-  ctx.body = { message: '登录成功', token };
+  // 存入 Redis，7天过期
+  await redis.set(`user:token:${user.id}`, token, 'EX', 7 * 24 * 60 * 60);
+  ctx.body = { message: '登录成功', code: 200, token };
 });
 
 loginRouter.post('/send-code', async (ctx) => {
@@ -89,4 +93,4 @@ loginRouter.post('/send-code', async (ctx) => {
   });
 
   ctx.body = { message: '验证码已发送' };
-}); 
+});
