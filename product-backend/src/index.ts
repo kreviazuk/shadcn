@@ -3,6 +3,7 @@ import Router from '@koa/router';
 import bodyParser from 'koa-bodyparser';
 import { PrismaClient } from '../generated/prisma';
 import { loginRouter } from './modules/auth/login.route';
+import { authMiddleware } from './modules/auth/auth.middleware';
 import { employeeRouter } from './modules/employee/employee.route';
 import cors from 'koa2-cors';
 
@@ -18,6 +19,7 @@ app.use(cors({
   credentials: true, // 如果需要支持 cookie
 }));
 app.use(bodyParser());
+app.use(authMiddleware);
 app.use(router.routes());
 app.use(router.allowedMethods());
 
