@@ -38,6 +38,16 @@ interface EmployeeTableProps {
   onDeleteEmployee: (id: string) => void;
   /** 当前的搜索关键词。 */
   searchTerm: string;
+  /** 当前页码 (可选，用于分页)。 */
+  currentPage?: number;
+  /** 总页数 (可选，用于分页)。 */
+  totalPages?: number;
+  /** 页面改变时的回调函数 (可选，用于分页)。 */
+  onPageChange?: (page: number) => void;
+  /** 表格数据是否正在加载 (可选)。 */
+  isLoading?: boolean;
+  /** 总条目数 (可选，用于分页显示)。 */
+  totalItems?: number;
 }
 
 /**
@@ -69,7 +79,12 @@ export function EmployeeTable({
   onSort,
   onEditEmployee,
   onDeleteEmployee,
-  searchTerm
+  searchTerm,
+  currentPage,
+  totalPages,
+  onPageChange,
+  isLoading,
+  totalItems,
 }: EmployeeTableProps) {
   return (
     <div className="rounded-md border bg-card text-card-foreground shadow-sm">
@@ -102,7 +117,13 @@ export function EmployeeTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {employees.length > 0 ? (
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="h-24 text-center py-3">
+                正在加载...
+              </TableCell>
+            </TableRow>
+          ) : employees.length > 0 ? (
             employees.map((employee) => (
               <TableRow key={employee.id} data-state={selectedRows.has(employee.id) ? "selected" : ""}>
                 {columns.map(col => (
@@ -143,6 +164,28 @@ export function EmployeeTable({
           )}
         </TableBody>
       </Table>
+      {/* 分页控件可以放在这里，如果 onPageChange 等 props 存在 */}
+      { !isLoading && totalPages && totalPages > 1 && onPageChange && currentPage && (
+        <div className="flex justify-center items-center space-x-2 mt-0 py-3 border-t">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+          >
+            上一页
+          </Button>
+          <span>第 {currentPage} 页 / 共 {totalPages} 页 {totalItems !== undefined && `(共 ${totalItems} 条)`}</span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+          >
+            下一页
+          </Button>
+        </div>
+      )}
     </div>
   );
 } 

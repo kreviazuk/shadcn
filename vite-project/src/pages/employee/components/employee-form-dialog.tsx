@@ -36,6 +36,8 @@ interface EmployeeFormDialogProps {
   onSubmit: (data: EmployeeFormValues) => void;
   /** 需要编辑的员工信息 (可选，仅在编辑模式下使用)。 */
   employeeToEdit?: Employee | null;
+  /** 表单提交相关的错误信息 (可选)。*/
+  submissionError?: string | null;
 }
 
 /**
@@ -50,6 +52,7 @@ export function EmployeeFormDialog({
   mode,
   onSubmit,
   employeeToEdit,
+  submissionError,
 }: EmployeeFormDialogProps) {
   const form = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeSchema),
@@ -158,6 +161,12 @@ export function EmployeeFormDialog({
                 </FormItem>
               )}
             />
+
+            {submissionError && (
+              <div className="text-sm text-red-500 text-center">
+                {submissionError}
+              </div>
+            )}
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>取消</Button>

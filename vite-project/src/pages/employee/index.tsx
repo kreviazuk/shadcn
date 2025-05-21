@@ -1,31 +1,30 @@
 import * as React from 'react';
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { EmployeeTableToolbar } from '@/pages/employee/components/employee-table-toolbar';
 import { EmployeeTable } from '@/pages/employee/components/employee-table';
 import { EmployeeFormDialog } from '@/pages/employee/components/employee-form-dialog';
 import { DeleteConfirmationDialog } from '@/pages/employee/components/delete-confirmation-dialog';
 import type { Employee, SortKey, ColumnDefinition, EmployeeFormValues, ModalMode } from './types';
+import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '@/api/employee';
+import type { GetEmployeesParams } from '@/api/employee';
 
-/**
- * 初始的模拟员工数据。
- */
-const initialMockEmployees: Employee[] = Array.from({ length: 15 }, (_, i) => ({
-  id: (i + 1).toString(),
-  name: `员工 ${i + 1}`,
-  email: `email${i + 1}@example.com`,
-  department: `部门 ${String.fromCharCode(88 + (i % 3))}`,
-  title: `职位 ${String.fromCharCode(65 + (i % 4))}-${Math.floor(i / 4) + 1}`,
-  status: i % 2 === 0 ? 'active' : 'inactive',
-}));
-
-/**
- * 员工管理页面组件。
- * 集成了员工表格、工具栏、表单对话框和删除确认对话框。
- * @returns 返回员工管理页面的 React 元素。
- */
+// 员工管理页面组件。
+// 集成了员工表格、工具栏、表单对话框和删除确认对话框。
+// @returns 返回员工管理页面的 React 元素。
 export function EmployeePage() {
   // 员工数据状态
-  const [employees, setEmployees] = useState<Employee[]>(initialMockEmployees);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  // API 加载状态
+  const [isLoading, setIsLoading] = useState(false);
+  // API 错误状态
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  
+  // 分页状态
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10); // 可以后续提供UI让用户修改, 暂时移除 setItemsPerPage
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
   // 搜索关键词状态
   const [searchTerm, setSearchTerm] = useState('');
   // 排序配置状态
@@ -45,44 +44,63 @@ export function EmployeePage() {
   // 将要删除的员工 ID 状态 (用于单行删除)
   const [employeeIdToDelete, setEmployeeIdToDelete] = useState<string | null>(null);
 
+  // 获取员工数据的函数
+  const fetchEmployees = useCallback(async () => {
+    setIsLoading(true);
+    // setFetchError(null); // 由 toast 处理，不再需要本地错误状态
+    try {
+      const params: GetEmployeesParams = {
+        page: currentPage,
+        limit: itemsPerPage,
+        searchTerm: searchTerm || undefined, // API期望undefined如果为空
+        sortBy: sortConfig.key || undefined,
+        sortOrder: sortConfig.direction === 'ascending' ? 'asc' : 'desc',
+      };
+      const response = await getEmployees(params);
+      setEmployees(response.data);
+      setTotalItems(response.totalItems);
+      setTotalPages(response.totalPages);
+    } catch (error) {
+      console.error('获取员工列表失败:', error);
+      // setFetchError(error instanceof Error ? error.message : '获取员工列表失败'); // 由 toast 处理
+      setEmployees([]); // 清空数据以防显示旧数据
+      setTotalItems(0);
+      setTotalPages(0);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentPage, itemsPerPage, searchTerm, sortConfig]);
+
+  // 组件加载及依赖项变化时获取数据
+  useEffect(() => {
+    fetchEmployees();
+  }, [fetchEmployees]); // fetchEmployees 包含了所有依赖项
+
+  // 当搜索词变化时，重置到第一页
+  useEffect(() => {
+    if (searchTerm !== '') { // 避免初始加载时重置
+        setCurrentPage(1);
+    }
+  }, [searchTerm]);
+
+
   /**
    * 处理表格排序的回调函数。
    * @param key - 要排序的列的键。
    */
   const handleSort = useCallback((key: SortKey) => {
+    setCurrentPage(1); // 排序时回到第一页
     setSortConfig(prevConfig => ({
       key,
       direction: prevConfig.key === key && prevConfig.direction === 'ascending' ? 'descending' : 'ascending'
     }));
+    // fetchEmployees 会因为 sortConfig 变化而自动调用
   }, []);
 
-  // 经过排序和筛选的员工数据
+  // 由于数据由API获取并已排序/筛选，此处的 useMemo 简化
   const sortedAndFilteredEmployees = useMemo(() => {
-    const filtered = employees.filter(employee =>
-      Object.values(employee).some(value =>
-        String(value).toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-    if (sortConfig.key) {
-      const sk = sortConfig.key;
-      const sorted = [...filtered].sort((a, b) => {
-        const aValue = a[sk];
-        const bValue = b[sk];
-        if (aValue === bValue) return 0;
-        let comparison = 0;
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          comparison = aValue - bValue;
-        } else if (typeof aValue === 'string' && typeof bValue === 'string') {
-          comparison = aValue.localeCompare(bValue);
-        } else {
-          comparison = String(aValue).localeCompare(String(bValue));
-        }
-        return sortConfig.direction === 'ascending' ? comparison : -comparison;
-      });
-      return sorted;
-    }
-    return filtered;
-  }, [employees, searchTerm, sortConfig]);
+    return employees; // 直接使用从 API 获取的数据
+  }, [employees]);
 
   /**
    * 处理全选/取消全选行的回调函数。
@@ -125,24 +143,26 @@ export function EmployeePage() {
    * 根据模态框模式新增或更新员工数据。
    * @param data - 表单数据。
    */
-  function handleFormSubmit(data: EmployeeFormValues) {
-    if (modalMode === 'add') {
-      const newId = `emp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-      const newEmployee: Employee = { 
-        ...data, 
-        id: newId, 
-        status: data.status || 'active' 
-      };
-      setEmployees(prev => [...prev, newEmployee]);
-    } else if (editingEmployee) {
-      setEmployees(prev => 
-        prev.map(emp => 
-          emp.id === editingEmployee.id ? { ...editingEmployee, ...data, id: editingEmployee.id } : emp
-        )
-      );
+  async function handleFormSubmit(data: EmployeeFormValues) {
+    setIsLoading(true); // 可以为表单提交也设置加载状态
+    // setFetchError(null); // 由 toast 处理
+    try {
+      if (modalMode === 'add') {
+        await createEmployee(data);
+      } else if (editingEmployee) {
+        await updateEmployee(editingEmployee.id, data);
+      }
+      setIsFormModalOpen(false);
+      setEditingEmployee(null);
+      fetchEmployees(); // 重新获取数据
+    } catch (error) {
+      console.error('表单提交失败:', error);
+      // setFetchError(error instanceof Error ? error.message : '表单提交失败'); // 由 toast 处理
+      // 保留模态框打开状态，以便用户看到错误并重试
+    } finally {
+      // 如果在提交过程中有特定加载状态，在这里取消
+      // setIsLoading(false); // 如果共用全局isLoading，则fetchEmployees会处理
     }
-    setIsFormModalOpen(false);
-    setEditingEmployee(null);
   }
 
   /**
@@ -170,22 +190,36 @@ export function EmployeePage() {
    * 确认删除操作。
    * 根据 `employeeIdToDelete` 的状态执行单行删除或批量删除。
    */
-  const confirmDelete = () => {
-    if (employeeIdToDelete) {
-       // 单行删除
-       setEmployees(prev => prev.filter(emp => emp.id !== employeeIdToDelete));
-       setSelectedRows(prev => { const s = new Set(prev); s.delete(employeeIdToDelete); return s; });
-       setEmployeeIdToDelete(null);
-    } else {
-      // 批量删除选中行
-      setEmployees(prev => prev.filter(emp => !selectedRows.has(emp.id)));
-      setSelectedRows(new Set());
+  const confirmDelete = async () => {
+    setIsLoading(true);
+    // setFetchError(null); // 由 toast 处理
+    try {
+      if (employeeIdToDelete) {
+         await deleteEmployee(employeeIdToDelete);
+         setEmployeeIdToDelete(null);
+      } else if (selectedRows.size > 0) {
+        // 批量删除选中行 - 后端目前是单个删除，所以需要循环调用
+        for (const id of selectedRows) {
+          await deleteEmployee(id);
+        }
+        setSelectedRows(new Set());
+      }
+      setIsDeleteConfirmOpen(false);
+      fetchEmployees(); // 重新获取数据
+      // 如果删除的是当前页的最后一条数据，可能需要调整 currentPage
+      if (employees.length === (employeeIdToDelete ? 1 : selectedRows.size) && currentPage > 1) {
+        setCurrentPage(prevPage => Math.max(1, prevPage -1));
+      }
+    } catch (error) {
+      console.error('删除失败:', error);
+      // setFetchError(error instanceof Error ? error.message : '删除失败'); // 由 toast 处理
+    } finally {
+       // setIsLoading(false); // fetchEmployees 会处理
     }
-    setIsDeleteConfirmOpen(false);
   };
   
   const numSelected = selectedRows.size;
-  const numVisibleRows = sortedAndFilteredEmployees.length;
+  const numVisibleRows = sortedAndFilteredEmployees.length; // 现在是当前页的行数
   // 计算全选复选框的状态
   const selectAllCheckedState: boolean | 'indeterminate' = numVisibleRows > 0 && numSelected === numVisibleRows ? true : (numSelected > 0 ? 'indeterminate' : false);
   
@@ -201,15 +235,33 @@ export function EmployeePage() {
     { key: 'actions', label: '操作', className: "w-[100px] px-3" },
   ];
 
+  // TODO: 添加分页控件到 EmployeeTable 或 EmployeeTableToolbar，并传入 currentPage, totalPages, setCurrentPage
+  // TODO: 在 EmployeeTable 中显示 isLoading 和 fetchError 状态
+
   return (
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
+      {/* {fetchError && ( // 移除此处的错误显示，依赖全局 toast
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+          <strong className="font-bold">错误!</strong>
+          <span className="block sm:inline"> {fetchError}</span>
+        </div>
+      )} */}
       <EmployeeTableToolbar
         searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
+        onSearchTermChange={setSearchTerm} // setSearchTerm 会触发 useEffect -> fetchEmployees
         onAddNewEmployee={() => openFormModal('add')}
         onDeleteSelected={handleDeleteSelectedTrigger}
         selectedRowCount={numSelected}
       />
+
+      {/* 可以在这里或Table内部处理isLoading */}
+      {isLoading && <div className="text-center p-4">正在加载数据...</div>}
+      {!isLoading && !fetchError && sortedAndFilteredEmployees.length === 0 && searchTerm && (
+         <div className="text-center p-4 text-gray-500">未找到符合搜索条件的员工。</div>
+      )}
+      {!isLoading && !fetchError && sortedAndFilteredEmployees.length === 0 && !searchTerm && (
+         <div className="text-center p-4 text-gray-500">暂无员工数据。</div>
+      )}
 
       <EmployeeTable
         employees={sortedAndFilteredEmployees}
@@ -219,26 +271,58 @@ export function EmployeePage() {
         selectAllCheckedState={selectAllCheckedState}
         onSelectAllRows={handleSelectAllRows}
         onSelectRow={handleSelectRow}
-        onSort={handleSort}
+        onSort={handleSort} // handleSort 会触发 useEffect -> fetchEmployees
         onEditEmployee={(employee) => openFormModal('edit', employee)}
         onDeleteEmployee={handleDeleteRowTrigger}
-        searchTerm={searchTerm}
+        searchTerm={searchTerm} // 这个 prop 可能不再需要，因为搜索在父组件处理并通过API
+        // 分页相关 props (如果表格组件支持)
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage} // 假设表格有一个 onPageChange 回调
+        isLoading={isLoading} // 将加载状态传递给表格
+        totalItems={totalItems} // <--- 新增传递 totalItems
       />
 
       <EmployeeFormDialog
         isOpen={isFormModalOpen}
-        onOpenChange={setIsFormModalOpen}
+        onOpenChange={(isOpen) => {
+          setIsFormModalOpen(isOpen);
+          if (!isOpen) setFetchError(null); // 关闭对话框时清除表单相关的错误
+        }}
         mode={modalMode}
         onSubmit={handleFormSubmit}
         employeeToEdit={editingEmployee}
+        // 可以传递提交时的错误给对话框显示
+        submissionError={fetchError}
       />
 
       <DeleteConfirmationDialog
         isOpen={isDeleteConfirmOpen}
         onOpenChange={setIsDeleteConfirmOpen}
         onConfirm={confirmDelete}
-        itemCount={employeeIdToDelete ? 1 : selectedRows.size} // 根据是单行删除还是批量删除来确定 itemCount
+        itemCount={employeeIdToDelete ? 1 : selectedRows.size}
       />
+      
+      {/* 简单的分页示例，可以集成到 Table 或 Toolbar */}
+      {/* {!isLoading && totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-2 mt-4">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            上一页
+          </button>
+          <span>第 {currentPage} 页 / 共 {totalPages} 页 ({totalItems} 条)</span>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
+          >
+            下一页
+          </button>
+        </div>
+      )} */}
     </div>
   );
 }

@@ -130,6 +130,17 @@ exports.Prisma.UserScalarFieldEnum = {
   password: 'password'
 };
 
+exports.Prisma.EmployeeScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  department: 'department',
+  title: 'title',
+  status: 'status',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -138,7 +149,8 @@ exports.Prisma.SortOrder = {
 
 exports.Prisma.ModelName = {
   Product: 'Product',
-  User: 'User'
+  User: 'User',
+  Employee: 'Employee'
 };
 
 /**

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Toaster,toast } from "sonner";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 import * as z from "zod";
@@ -25,7 +25,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { loginApi } from "@/api/api";
+import { loginApi } from "@/api/auth";
 
 /**
  * 定义登录表单的校验规则。
@@ -173,7 +173,6 @@ export function LoginForm() {
           </form>
         </Form>
       </CardContent>
-      <Toaster position="top-center" />
     </Card>
   );
 } 
