@@ -29,6 +29,12 @@ export async function apiFetch<T = unknown>(
   // 统一 headers 类型
   const finalHeaders = normalizeHeaders(headers);
 
+  // 添加 Authorization header (如果 token 存在)
+  const token = localStorage.getItem('token');
+  if (token) {
+    finalHeaders['Authorization'] = `Bearer ${token}`;
+  }
+
   let finalBody = body;
   if (["POST", "PUT", "PATCH"].includes(method.toUpperCase())) {
     finalHeaders["Content-Type"] = "application/json";
@@ -55,9 +61,24 @@ export async function apiFetch<T = unknown>(
   }
 
   if (response.status !== 200 && response.status !== 201) { // 201 通常也表示成功
-    const errorResponse = data as ErrorResponse; // 断言为错误响应类型
+    const errorResponse = data as ErrorResponse;
     const errorMessage = errorResponse.message || errorResponse.error || "请求失败";
     toast.error(errorMessage);
+
+    if (response.status === 401) {
+      // 清除本地存储的 token (假设 token 存储在 localStorage 中，键为 'token')
+      localStorage.removeItem('token'); 
+      // 清除用户信息 (假设用户信息存储在 localStorage 中，键为 'userInfo')
+      localStorage.removeItem('userInfo');
+      
+      // 延迟重定向，以确保toast有时间显示
+      setTimeout(() => {
+        if (window.location.pathname !== '/login') { // 避免在登录页无限重定向
+          window.location.href = '/login';
+        }
+      }, 1000); // 延迟 1000 毫秒，您可以根据toast动画效果调整这个时间
+    }
+
     throw new Error(errorMessage);
   }
   return data as T; // 断言为成功响应类型 T

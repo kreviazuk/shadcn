@@ -60,8 +60,15 @@ loginRouter.post('/login', async (ctx) => {
     JWT_SECRET,
     { expiresIn: '7d' } // token 有效期7天
   );
-  // 存入 Redis，7天过期
-  await redis.set(`user:token:${user.id}`, token, 'EX', 7 * 24 * 60 * 60);
+  try {
+    // 存入 Redis，7天过期
+    await redis.set(`user:token:${user.id}`, token, 'EX', 7 * 24 * 60 * 60);
+    console.log(`[Auth] Successfully stored token in Redis for user ${user.id}`);
+  } catch (redisError) {
+    console.error(`[Auth] Failed to store token in Redis for user ${user.id}:`, redisError);
+    // 即使 Redis 存储失败，可能仍选择让用户登录成功，但会话驱逐功能会受影响
+    // 可以考虑是否在此处返回错误或有其他处理
+  }
   ctx.body = { message: '登录成功', code: 200, token };
 });
 

@@ -1,9 +1,13 @@
 import Router from '@koa/router';
 import { PrismaClient, Prisma } from '../../../generated/prisma';
 import { v4 as uuidv4 } from 'uuid'; // 用于生成 ID
+import { authMiddleware } from '../auth/auth.middleware'; // 导入认证中间件
 
 export const employeeRouter = new Router({ prefix: '/employees' });
 const prisma = new PrismaClient();
+
+// 应用认证中间件到所有员工路由
+employeeRouter.use(authMiddleware);
 
 // 类型定义 (基于前端 Employee 类型)
 interface EmployeeRequestBody {
