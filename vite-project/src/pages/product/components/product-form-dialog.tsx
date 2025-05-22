@@ -12,7 +12,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
+  FormMessage,  
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -20,13 +20,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 // import { z } from "zod";
 import { productSchema, type ProductFormValues } from "../types"
+import { Button } from "@/components/ui/button";
 interface ProductFormDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
+  onSubmit: (data: ProductFormValues) => void;
 }
 export function ProductFormDialog({
   isOpen,
   onOpenChange,
+  onSubmit,
 }: ProductFormDialogProps) {
     const form = useForm<ProductFormValues>({
       resolver: zodResolver(productSchema),
@@ -40,7 +43,8 @@ export function ProductFormDialog({
       },
     });
     const handleSubmit = (data: ProductFormValues) => {
-        console.log(data);        
+        console.log(data);   
+        onSubmit(data);     
     }
   return (
     <div>
@@ -70,6 +74,10 @@ export function ProductFormDialog({
 
             </form>
           </Form>
+        <DialogFooter> 
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>取消</Button>
+            <Button type="submit" onClick={form.handleSubmit(handleSubmit)}>保存</Button>
+        </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
