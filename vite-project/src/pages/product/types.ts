@@ -34,3 +34,16 @@ export interface ColumnDefinition {
 
 // 模态框模式
 export type ModalMode = 'add' | 'edit';
+
+// 商品表单校验的 schema
+export const productSchema = z.object({
+  name: z.string().min(1, { message: '名称不能为空' }),
+  description: z.string().optional(),
+  price: z.number().min(0, { message: '价格不能为负' }),
+  sku: z.string().min(1, { message: 'SKU不能为空' }),
+  stockQuantity: z.number().min(0, { message: '库存不能为负' }),
+  category: z.string().optional(),
+});
+
+// 根据 productSchema 推断出的商品表单值的类型
+// export type ProductFormValues = z.infer<typeof productSchema>;
