@@ -1,4 +1,6 @@
 // 与 Prisma 模型对应的前端 Product 类型
+import { z } from "zod";
+
 export interface Product {
   id: string;
   name: string;
@@ -13,14 +15,7 @@ export interface Product {
 
 // 产品表单值，用于创建和编辑
 // 注意：这里的 price 是 number | string，方便表单处理，提交到API时会转为 string
-export interface ProductFormValues {
-  name: string;
-  description?: string | null;
-  price: number | string; 
-  sku: string;
-  stockQuantity?: number;
-  category?: string | null;
-}
+// 现在使用 z.infer 来自动生成这个类型，见文件末尾
 
 // 表格列定义辅助类型
 export type ProductSortKey = keyof Product | 'select' | 'actions'; // 包含特殊列
@@ -46,4 +41,4 @@ export const productSchema = z.object({
 });
 
 // 根据 productSchema 推断出的商品表单值的类型
-// export type ProductFormValues = z.infer<typeof productSchema>;
+export type ProductFormValues = z.infer<typeof productSchema>;
