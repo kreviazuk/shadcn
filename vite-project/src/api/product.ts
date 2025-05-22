@@ -4,9 +4,14 @@ import type { Product } from '@/pages/product/types'; // 路径假设，后续�
 export interface GetProductsParams {
   page?: number;
   limit?: number;
-  searchTerm?: string;
   sortBy?: string; // 后端接受字符串，如 'name', 'price'
   sortOrder?: 'asc' | 'desc';
+  name?: string;
+  description?: string;
+  price?: number;
+  sku?: string;
+  stockQuantity?: number;
+  category?: string;
 }
 
 export interface PaginatedProductsResponse {
@@ -32,12 +37,16 @@ export interface ProductFormValues {
 // 获取产品列表
 export function getProducts(params: GetProductsParams = {}): Promise<PaginatedProductsResponse> {
   const queryParams = new URLSearchParams();
-  if (params.page) queryParams.append('page', params.page.toString());
-  if (params.limit) queryParams.append('limit', params.limit.toString());
-  if (params.searchTerm) queryParams.append('searchTerm', params.searchTerm);
-  if (params.sortBy) queryParams.append('sortBy', params.sortBy);
-  if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-  
+  if(params.name) queryParams.append('name', params.name);
+  if(params.description) queryParams.append('description', params.description);
+  if(params.price) queryParams.append('price', params.price.toString());
+  if(params.sku) queryParams.append('sku', params.sku);
+  if(params.stockQuantity) queryParams.append('stockQuantity', params.stockQuantity.toString());
+  if(params.category) queryParams.append('category', params.category);
+  if(params.page) queryParams.append('page', params.page.toString());
+  if(params.limit) queryParams.append('limit', params.limit.toString());
+  if(params.sortBy) queryParams.append('sortBy', params.sortBy);
+  if(params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
   return apiFetch<PaginatedProductsResponse>(`/api/products?${queryParams.toString()}`);
 }
 
