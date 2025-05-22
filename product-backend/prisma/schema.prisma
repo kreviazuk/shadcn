@@ -29,9 +29,16 @@ model Employee {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+// 更新后的 Product 模型
 model Product {
-  id        Int      @id @default(autoincrement())
-  name      String
-  price     Float
-  createdAt DateTime @default(now())
+  id            String    @id @default(uuid())
+  name          String
+  description   String?
+  price         Decimal   // 使用 Decimal 存储货币值以保证精度
+  sku           String    @unique
+  stockQuantity Int       @default(0)
+  category      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }

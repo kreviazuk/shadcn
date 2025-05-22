@@ -11,13 +11,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Product {
-  id        Int      @id @default(autoincrement())
-  name      String
-  price     Float
-  createdAt DateTime @default(now())
-}
-
 model User {
   id       Int    @id @default(autoincrement())
   email    String @unique
@@ -34,4 +27,17 @@ model Employee {
   status     String // "active" or "inactive"
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+// 更新后的 Product 模型
+model Product {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  price         Decimal // 使用 Decimal 存储货币值以保证精度
+  sku           String   @unique
+  stockQuantity Int      @default(0)
+  category      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
