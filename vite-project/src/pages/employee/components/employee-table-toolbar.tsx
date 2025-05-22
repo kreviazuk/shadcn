@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Trash2, PlusCircleIcon } from 'lucide-react';
+import { Trash2, PlusCircleIcon, Search, RotateCcw } from 'lucide-react';
 
 /**
  * 员工表格工具栏组件的属性接口。
@@ -11,6 +11,10 @@ interface EmployeeTableToolbarProps {
   searchTerm: string;
   /** 当搜索关键词变化时的回调函数。 */
   onSearchTermChange: (term: string) => void;
+  /** 点击搜索按钮时的回调函数。 */
+  onSearch: () => void;
+  /** 点击重置按钮时的回调函数。 */
+  onReset: () => void;
   /** 点击新增员工按钮时的回调函数。 */
   onAddNewEmployee: () => void;
   /** 点击删除选中员工按钮时的回调函数。 */
@@ -28,18 +32,28 @@ interface EmployeeTableToolbarProps {
 export function EmployeeTableToolbar({
   searchTerm,
   onSearchTermChange,
+  onSearch,
+  onReset,
   onAddNewEmployee,
   onDeleteSelected,
   selectedRowCount,
 }: EmployeeTableToolbarProps) {
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between mb-4 gap-3">
-      <Input
-        placeholder="搜索员工..."
-        value={searchTerm}
-        onChange={(e) => onSearchTermChange(e.target.value)}
-        className="max-w-full sm:max-w-xs h-9"
-      />
+      <div className="flex items-center gap-2 w-full sm:w-auto">
+        <Input
+          placeholder="搜索员工..."
+          value={searchTerm}
+          onChange={(e) => onSearchTermChange(e.target.value)}
+          className="max-w-full sm:max-w-xs h-9"
+        />
+        <Button variant="default" onClick={onSearch} size="sm">
+          <Search className="mr-1.5 h-4 w-4" /> 搜索
+        </Button>
+        <Button variant="outline" onClick={onReset} size="sm">
+          <RotateCcw className="mr-1.5 h-4 w-4" /> 重置
+        </Button>
+      </div>
       <div className="flex items-center gap-2 w-full sm:w-auto">
         {selectedRowCount > 0 && (
           <Button variant="destructive" onClick={onDeleteSelected} size="sm" className="w-full sm:w-auto">

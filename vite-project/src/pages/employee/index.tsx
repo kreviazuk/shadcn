@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { EmployeeTableToolbar } from '@/pages/employee/components/employee-table-toolbar';
 import { EmployeeTable } from '@/pages/employee/components/employee-table';
 import { EmployeeFormDialog } from '@/pages/employee/components/employee-form-dialog';
@@ -27,6 +27,11 @@ export function EmployeePage() {
 
   // 搜索关键词状态
   const [searchTerm, setSearchTerm] = useState('');
+  const searchTermRef = useRef(searchTerm);
+  
+  // 强制获取令牌状态
+  const [forceFetchToken, setForceFetchToken] = useState(0);
+  
   // 排序配置状态
   const [sortConfig, setSortConfig] = useState<{ key: SortKey | null; direction: 'ascending' | 'descending' }>({ key: 'id', direction: 'ascending' });
   // 选中行 ID 集合状态
@@ -44,6 +49,11 @@ export function EmployeePage() {
   // 将要删除的员工 ID 状态 (用于单行删除)
   const [employeeIdToDelete, setEmployeeIdToDelete] = useState<string | null>(null);
 
+  // 同步 searchTermRef 和 searchTerm
+  useEffect(() => {
+    searchTermRef.current = searchTerm;
+  }, [searchTerm]);
+
   // 获取员工数据的函数
   const fetchEmployees = useCallback(async () => {
     setIsLoading(true);
@@ -52,7 +62,7 @@ export function EmployeePage() {
       const params: GetEmployeesParams = {
         page: currentPage,
         limit: itemsPerPage,
-        searchTerm: searchTerm || undefined, // API期望undefined如果为空
+        searchTerm: searchTermRef.current || undefined, // 使用 ref 的当前值
         sortBy: sortConfig.key || undefined,
         sortOrder: sortConfig.direction === 'ascending' ? 'asc' : 'desc',
       };
@@ -69,12 +79,12 @@ export function EmployeePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, itemsPerPage, searchTerm, sortConfig]);
+  }, [currentPage, itemsPerPage, sortConfig]); // 不包含 searchTerm，避免搜索词变化时自动触发搜索
 
   // 组件加载及依赖项变化时获取数据
   useEffect(() => {
     fetchEmployees();
-  }, [fetchEmployees]); // fetchEmployees 包含了所有依赖项
+  }, [fetchEmployees, forceFetchToken]); // 依赖 forceFetchToken，允许通过按钮触发搜索
 
   // 当搜索词变化时，重置到第一页
   useEffect(() => {
@@ -83,6 +93,23 @@ export function EmployeePage() {
     }
   }, [searchTerm]);
 
+  /**
+   * 处理搜索按钮点击
+   */
+  const handleSearch = useCallback(() => {
+    setCurrentPage(1); // 搜索时回到第一页
+    setForceFetchToken(prevToken => prevToken + 1); // 触发搜索
+  }, []);
+
+  /**
+   * 处理重置按钮点击
+   */
+  const handleReset = useCallback(() => {
+    setSearchTerm(''); // 清空搜索词
+    setCurrentPage(1); // 回到第一页
+    setSortConfig({ key: 'id', direction: 'ascending' }); // 重置排序
+    setForceFetchToken(prevToken => prevToken + 1); // 触发搜索
+  }, []);
 
   /**
    * 处理表格排序的回调函数。
@@ -94,7 +121,7 @@ export function EmployeePage() {
       key,
       direction: prevConfig.key === key && prevConfig.direction === 'ascending' ? 'descending' : 'ascending'
     }));
-    // fetchEmployees 会因为 sortConfig 变化而自动调用
+    // 由于 sortConfig 变化，fetchEmployees 的引用会变化，主 useEffect 会自动调用
   }, []);
 
   // 由于数据由API获取并已排序/筛选，此处的 useMemo 简化
@@ -153,7 +180,7 @@ export function EmployeePage() {
       }
       setIsFormModalOpen(false);
       setEditingEmployee(null);
-      fetchEmployees(); // 重新获取数据
+      setForceFetchToken(prevToken => prevToken + 1); // 提交后强制刷新数据
     } catch (error) {
       console.error('表单提交失败:', error);
     }
@@ -199,11 +226,11 @@ export function EmployeePage() {
         setSelectedRows(new Set());
       }
       setIsDeleteConfirmOpen(false);
-      fetchEmployees(); // 重新获取数据
       // 如果删除的是当前页的最后一条数据，可能需要调整 currentPage
       if (employees.length === (employeeIdToDelete ? 1 : selectedRows.size) && currentPage > 1) {
         setCurrentPage(prevPage => Math.max(1, prevPage -1));
       }
+      setForceFetchToken(prevToken => prevToken + 1); // 删除后强制刷新数据
     } catch (error) {
       console.error('删除失败:', error);
       // setFetchError(error instanceof Error ? error.message : '删除失败'); // 由 toast 处理
@@ -235,7 +262,9 @@ export function EmployeePage() {
     <div className="container mx-auto p-4 md:p-6 lg:p-8">
       <EmployeeTableToolbar
         searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm} // setSearchTerm 会触发 useEffect -> fetchEmployees
+        onSearchTermChange={setSearchTerm}
+        onSearch={handleSearch} // 新增搜索按钮处理函数
+        onReset={handleReset} // 新增重置按钮处理函数
         onAddNewEmployee={() => openFormModal('add')}
         onDeleteSelected={handleDeleteSelectedTrigger}
         selectedRowCount={numSelected}
