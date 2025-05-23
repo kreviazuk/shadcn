@@ -3,7 +3,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -36,7 +35,7 @@ export function ProductFormDialog({
       defaultValues: {
         name: "",
         description: "",
-        price: "",
+        price: 0,
         sku: "",
         stockQuantity: 0,
         category: "",

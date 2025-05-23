@@ -1,5 +1,5 @@
 import { ProductTable } from "./components/product-table";
-import type { Product } from "./types";
+import type { Product, ProductFormValues } from "./types";
 import { useState, useEffect } from 'react';
 import { getProducts, type GetProductsParams } from '@/api/product';
 import { ProductTableToolbar } from "./components/product-table-toolbar";
@@ -39,6 +39,10 @@ export function ProductPage() {
     
     fetchProducts();
   }, []);
+  const handleSubmit = (data:ProductFormValues) => {
+    console.log('表单数据:', data);
+    // 这里可以添加提交表单的逻辑
+  }
   const  handleSearchChange = (name: string) => {
     console.log('搜索词:', name);
     setName(name)
@@ -54,6 +58,6 @@ export function ProductPage() {
       onAddNewClick={handleAddNewClick}
     />
     <ProductTable products={products} />
-    <ProductFormDialog isOpen={isFormModalOpen} onOpenChange={setIsFormModalOpen} />
+    <ProductFormDialog isOpen={isFormModalOpen} onOpenChange={setIsFormModalOpen} onSubmit={handleSubmit} />
   </div>;
 }
